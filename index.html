@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Scanner Live</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    :root {
+      --primary: #2563eb; --primary-hover: #1d4ed8; --bg-main: #f8fafc; --card-bg: #ffffff;
+      --text-dark: #1e293b; --text-muted: #64748b; --success: #10b981; --success-bg: #ecfdf5;
+      --warning: #f59e0b; --warning-bg: #fffbeb; --danger: #ef4444; --danger-bg: #fef2f2;
+    }
+    body { font-family: 'Prompt', sans-serif; padding: 16px; text-align: center; background-color: var(--bg-main); margin: 0; color: var(--text-dark); }
+    .container { max-width: 460px; margin: auto; background: var(--card-bg); padding: 24px 16px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); box-sizing: border-box; }
+    h2 { margin-top: 0; font-weight: 600; font-size: 22px; }
+    .section-label { display: block; text-align: left; font-weight: 600; font-size: 14px; color: var(--text-muted); margin-bottom: 8px; margin-top: 16px; text-transform: uppercase; }
+    .channel-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .channel-btn { background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 4px; font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .channel-btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+    .qty-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; }
+    .qty-btn { background: #f1f5f9; border: none; font-size: 20px; font-weight: bold; width: 45px; height: 45px; border-radius: 10px; cursor: pointer; }
+    #qty { width: 80px; height: 45px; text-align: center; font-size: 18px; font-weight: 600; border: 2px solid #e2e8f0; border-radius: 10px; }
+    .scanner-wrapper { position: relative; border-radius: 14px; overflow: hidden; background: #0f172a; margin: 16px 0; min-height: 200px; }
+    #reader { width: 100%; border: none !important; }
+    .laser-line { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: rgba(239, 68, 68, 0.7); box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.8); z-index: 10; animation: scan 2s linear infinite; }
+    @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+    #status { font-weight: 500; color: var(--text-muted); margin: 12px 0; font-size: 13px; white-space: pre-line; background: #f1f5f9; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .history-section { margin-top: 24px; text-align: left; }
+    .history-title { font-size: 14px; font-weight: 600; color: var(--text-muted); padding-bottom: 6px; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+    .table-responsive { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; background: white; }
+    th { background-color: #f8fafc; color: var(--text-muted); padding: 10px 8px; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .badge-ch { background: #eff6ff; color: var(--primary); padding: 4px 6px; border-radius: 6px; font-weight: 600; font-size: 10px; }
+    .product-details { font-weight: 600; color: var(--text-dark); }
+    .barcode-sub { color: var(--text-muted); font-size: 10px; }
+    .qty-badge { background: #f0fdf4; color: var(--success); font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🟢 ระบบสแกนสต็อกสินค้า (Live)</h2>
+  
+  <span class="section-label">เลือก ช่องทาง / Channel</span>
+  <div class="channel-group">
+    <button type="button" class="channel-btn active" onclick="selectChannel(this, 'FG')">FG</button>
+    <button type="button" class="channel-btn" onclick="selectChannel(this, '80C NO PK')">80C NO PK</button>
+    <button type="button" class="channel-btn" onclick="selectChannel(this, '80Q NO')">80Q NO</button>
+  </div>
+  <input type="hidden" id="selectedChannel" value="FG">
+
+  <span class="section-label">ระบุจำนวนสินค้า</span>
+  <div class="qty-container">
+    <button type="button" class="qty-btn" onclick="stepQty(-1)">−</button>
+    <input type="number" id="qty" value="1" min="1">
+    <button type="button" class="qty-btn" onclick="stepQty(1)">+</button>
+  </div>
+
+  <div class="scanner-wrapper">
+    <div class="laser-line"></div>
+    <div id="reader"></div>
+  </div>
+  
+  <div id="status">กำลังเปิดกล้องสแกนสด...</div>
+
+  <div class="history-section">
+    <div class="history-title">📋 5 รายการล่าสุดที่ผ่านการสแกน</div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr><th width="15%">เวลา</th><th width="20%">คลัง</th><th width="50%">รายการสินค้า</th><th width="15%">จำนวน</th></tr>
+        </thead>
+        <tbody id="recentBody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding: 20px;">กำลังโหลดประวัติ...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ⚠️ สำคัญมาก: เอาลิงก์ Web App ที่ได้จาก Google Sheets มาวางตรงนี้แทนคำในเครื่องหมายคำพูดนะครับ
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzmMlEIhENB0_En7F14ZnFYUwDsQpFWMwNHa5JbMQFLJIuVEdLZLpuVFVS2HATOWoCZ3g/exec";
+
+  let html5QrCode;
+  let isScanning = true;
+
+  function selectChannel(element, value) {
+    let buttons = document.querySelectorAll('.channel-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    document.getElementById('selectedChannel').value = value;
+  }
+
+  function stepQty(amount) {
+    let qtyInput = document.getElementById('qty');
+    let currentVal = parseInt(qtyInput.value) || 1;
+    let newVal = currentVal + amount;
+    if (newVal >= 1) qtyInput.value = newVal;
+  }
+
+  function onScanSuccess(decodedText) {
+    if (!isScanning) return;
+    isScanning = false; // ป้องกันการสแกนซ้ำซ้อนขณะบันทึก
+
+    var channelValue = document.getElementById('selectedChannel').value;
+    var qtyValue = document.getElementById('qty').value;
+    var statusDiv = document.getElementById('status');
+    
+    statusDiv.style.color = "var(--warning)";
+    statusDiv.style.backgroundColor = "var(--warning-bg)";
+    statusDiv.innerText = "⏳ กำลังส่งข้อมูลเข้า Google Sheets...";
+
+    // ส่งข้อมูลข้ามเซิร์ฟเวอร์ไปยัง Google Sheets
+    fetch(BACKEND_URL, {
+      method: "POST",
+      body: JSON.stringify({ channel: channelValue, barcode: decodedText, qty: qtyValue })
+    })
+    .then(res => res.json())
+    .then(response => {
+      statusDiv.style.color = "var(--success)";
+      statusDiv.style.backgroundColor = "var(--success-bg)";
+      statusDiv.innerText = response.status;
+      updateRecentTable(response.latestScans);
+      if (navigator.vibrate) navigator.vibrate(150);
+      
+      // หน่วงเวลา 2 วินาทีเพื่อให้พนักงานขยับไปยิงชิ้นต่อไปได้
+      setTimeout(() => { isScanning = true; }, 2000); 
+    })
+    .catch(err => {
+      statusDiv.style.color = "var(--danger)";
+      statusDiv.style.backgroundColor = "var(--danger-bg)";
+      statusDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล";
+      setTimeout(() => { isScanning = true; }, 2000);
+    });
+  }
+
+  function startCamera() {
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 20, qrbox: { width: 280, height: 140 } }, 
+      onScanSuccess
+    )
+    .then(() => {
+      document.getElementById('status').innerText = "🟢 กล้องออนไลน์: เล็งบาร์โค้ดได้เลย (สแกนสดทำงานแล้ว)";
+    })
+    .catch(err => {
+      document.getElementById('status').innerText = "❌ ไม่สามารถเข้าถึงกล้องได้: " + err;
+    });
+  }
+
+  function loadHistory() {
+    fetch(BACKEND_URL)
+    .then(res => res.json())
+    .then(updateRecentTable)
+    .catch(err => { console.error("โหลดประวัติไม่สำเร็จ", err); });
+  }
+
+  function updateRecentTable(scans) {
+    var tbody = document.getElementById('recentBody');
+    tbody.innerHTML = ""; 
+    if (!scans || scans.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:var(--text-muted); padding: 15px;'>ยังไม่มีประวัติการบันทึก</td></tr>";
+      return;
+    }
+    scans.forEach(function(item) {
+      var row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="text-align:center; color:var(--text-muted); font-size:11px;">${item.timeStr}</td>
+        <td style="text-align:center;"><span class="badge-ch">${item.channel}</span></td>
+        <td>
+          <div class="product-details">${item.desc}</div>
+          <div class="barcode-sub">CODE: ${item.barcode}</div>
+        </td>
+        <td style="text-align:center;"><span class="qty-badge">${item.qty}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  window.onload = function() {
+    loadHistory();
+    startCamera();
+  };
+</script>
+
+</body>
+</html>
