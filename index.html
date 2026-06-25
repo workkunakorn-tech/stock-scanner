@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V9 (Fix Sound & Time)</title>
+    <title>ระบบสแกนสต็อกสินค้า V11 (พิมพ์เลขลื่นไหล 100%)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -203,7 +203,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 24px;
         }
         .btn-qty {
@@ -216,15 +216,25 @@
             font-weight: 600;
             color: #1e293b;
             cursor: pointer;
+            user-select: none;
         }
         .qty-display {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 600;
-            width: 80px;
+            width: 110px;
             text-align: center;
-            border: none;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 8px 5px;
             outline: none;
             color: #1e293b;
+            background: #ffffff;
+            -webkit-appearance: none; /* ลบลูกศรของ iOS เพื่อความสวยงาม */
+            margin: 0;
+        }
+        .qty-display:focus {
+            border-color: #2563eb;
+            background: #f8fafc;
         }
         .btn-submit {
             background: #22c55e;
@@ -250,10 +260,10 @@
         <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า:</div>
         <div class="modal-barcode" id="modalBarcodeTxt">---------</div>
         
-        <div class="section-title">ระบุจำนวนสินค้าที่ต้องการบันทึก</div>
+        <div class="section-title">ระบุจำนวนสินค้า (พิมพ์เลขหรือกดปุ่มได้)</div>
         <div class="qty-container">
             <button class="btn-qty" onclick="changeQty(-1)">-</button>
-            <input type="number" class="qty-display" id="qtyInput" value="1" min="1" readonly>
+            <input type="number" class="qty-display" id="qtyInput" value="1" min="1" inputmode="numeric" pattern="[0-9]*" onclick="this.select()" onfocus="this.select()" oninput="validateInput(this)">
             <button class="btn-qty" onclick="changeQty(1)">+</button>
         </div>
         
@@ -282,9 +292,9 @@
         <table class="history-table" id="historyTable" style="display: none;">
             <thead>
                 <tr>
-                    <th style="width: 28%;">เวลา</th>
+                    <th style="width: 32%;">เวลา</th>
                     <th style="width: 22%;">คลัง</th>
-                    <th style="width: 38%;">รหัสบาร์โค้ด</th>
+                    <th style="width: 34%;">รหัสบาร์โค้ด</th>
                     <th style="width: 12%; text-align: center;">จำนวน</th>
                 </tr>
             </thead>
@@ -306,29 +316,40 @@
     let isScanning = false;
     let isModalOpen = false; 
     let lastScannedBarcode = ""; 
+    let audioCtx = null; 
 
     window.onload = function() {
         loadHistory();
     };
 
-    // 🔊 ฟังก์ชันสร้างเสียง "ติ๊ด" อิเล็กทรอนิกส์ (Web Audio API)
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
     function playBeepSound() {
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            initAudio(); 
+            if (!audioCtx) return;
+
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            oscillator.type = 'sine'; // คลื่นเสียงใส
-            oscillator.frequency.setValueAtTime(987.77, audioCtx.currentTime); // คีย์เสียงสูงใส (โน้ต B5)
-            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime); // ระดับความดัง
+            oscillator.type = 'sine'; 
+            oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.20, audioCtx.currentTime); 
             
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.12); // ให้เสียงดังเป็นเวลา 0.12 วินาทีแล้วดับ
+            oscillator.stop(audioCtx.currentTime + 0.10); 
         } catch (e) {
-            console.error("เบราว์เซอร์ไม่รองรับระบบเสียงอัตโนมัติ:", e);
+            console.error("ระบบเล่นเสียงขัดข้อง:", e);
         }
     }
 
@@ -366,6 +387,12 @@
         qtyInput.value = currentVal;
     }
 
+    function validateInput(input) {
+        if (input.value !== '' && parseInt(input.value) < 1) {
+            input.value = 1;
+        }
+    }
+
     function showAlert(msg, isError = true) {
         const box = document.getElementById('alertBox');
         if(msg) {
@@ -380,6 +407,8 @@
     }
 
     function toggleScanner() {
+        initAudio(); 
+        
         const scanBtn = document.getElementById('scanBtn');
         if (!isScanning) {
             showAlert(null);
@@ -429,23 +458,32 @@
         if (isModalOpen) return; 
         
         isModalOpen = true; 
-        playBeepSound(); // 🔊 ส่งเสียงติ๊ดทันทีที่ยิงโดนบาร์โค้ด
-        triggerGreenFlash(); // 🟢 หน้าจอกะพริบสีเขียว
+        playBeepSound(); 
+        triggerGreenFlash(); 
         
         lastScannedBarcode = decodedText;
         document.getElementById('modalBarcodeTxt').innerText = decodedText;
         resetModal(); 
 
         document.getElementById('qtyModal').style.display = 'flex';
+
+        // 🔥 วิ่งไปโฟกัสที่ช่องกรอกจำนวนอัตโนมัติ เพื่อดึงแป้นพิมพ์ตัวเลขขึ้นมาทันที
+        setTimeout(() => {
+            const qtyInput = document.getElementById('qtyInput');
+            qtyInput.focus();
+            qtyInput.select(); // คลุมดำเลข 1 ให้พร้อมพิมพ์เลขอื่นทับได้ทันที
+        }, 100);
     }
 
     function onScanError(err) { }
 
     function submitData() {
+        const qtyInput = document.getElementById('qtyInput');
+        let qty = parseInt(qtyInput.value) || 1;
+        if (qty < 1) qty = 1;
+
         document.getElementById('qtyModal').style.display = 'none';
         showAlert("⏳ กำลังบันทึกข้อมูลเข้าสู่ระบบ...", false);
-        
-        const qty = document.getElementById('qtyInput').value;
 
         fetch(BACKEND_URL, {
             method: 'POST',
@@ -481,15 +519,32 @@
             if(data && data.length > 0) {
                 historyBody.innerHTML = '';
                 data.forEach(item => {
-                    // 🛡️ ดักจับชื่อตัวแปรทุกรูปแบบ + ดึงค่าแถวแรกสุดมาแทนกรณีแปรหลุดล็อก เพื่อแก้ปัญหาคำว่า undefined
-                    let displayTime = item.เวลา || item.time || item.timestamp || item.Timestamp || item.date || item.formattedTime || (Object.values(item)[0] ? Object.values(item)[0] : '-');
+                    let displayTime = "-";
+                    const possibleTimeKeys = ['เวลา', 'time', 'timestamp', 'Timestamp', 'date', 'วันที่', 'dateTime'];
+                    
+                    for (let k of possibleTimeKeys) {
+                        if (item[k] !== undefined && item[k] !== null) {
+                            displayTime = item[k];
+                            break;
+                        }
+                    }
+                    
+                    if (displayTime === "-") {
+                        for (let key in item) {
+                            let lKey = key.toLowerCase();
+                            if (!['channel', 'barcode', 'qty', 'quantity', 'รายการสินค้า', 'คลัง', 'จำนวน'].includes(lKey)) {
+                                displayTime = item[key];
+                                break;
+                            }
+                        }
+                    }
                     
                     historyBody.innerHTML += `
                         <tr>
                             <td style="color: #64748b; font-weight: 500; font-size:11px;">${displayTime}</td>
-                            <td>${item.channel}</td>
-                            <td style="font-weight: 500; color: #1e293b; word-break: break-all;">${item.barcode}</td>
-                            <td style="text-align: center; font-weight:600;">${item.qty}</td>
+                            <td>${item.channel || item.คลัง || '-'}</td>
+                            <td style="font-weight: 500; color: #1e293b; word-break: break-all;">${item.barcode || '-'}</td>
+                            <td style="text-align: center; font-weight:600;">${item.qty || item.จำนวน || '1'}</td>
                         </tr>
                     `;
                 });
