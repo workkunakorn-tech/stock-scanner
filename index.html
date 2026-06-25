@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V8 (Super Fast & Stable Popup)</title>
+    <title>ระบบสแกนสต็อกสินค้า V9 (Fix Sound & Time)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -146,7 +146,7 @@
             font-size: 13px;
         }
 
-        /* 🟢 เอฟเฟกต์หน้าจอกะพริบสีเขียวเมื่อสแกนสำเร็จ */
+        /* เอฟเฟกต์หน้าจอกะพริบสีเขียวเมื่อสแกนสำเร็จ */
         #flashOverlay {
             position: fixed;
             top: 0;
@@ -161,7 +161,7 @@
             transition: opacity 0.03s ease-out;
         }
 
-        /* 🗖 หน้าต่างป็อปอัปกรอกจำนวนสินค้า (Modal Overlay) */
+        /* หน้าต่างป็อปอัปกรอกจำนวนสินค้า (Modal Overlay) */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -311,6 +311,27 @@
         loadHistory();
     };
 
+    // 🔊 ฟังก์ชันสร้างเสียง "ติ๊ด" อิเล็กทรอนิกส์ (Web Audio API)
+    function playBeepSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine'; // คลื่นเสียงใส
+            oscillator.frequency.setValueAtTime(987.77, audioCtx.currentTime); // คีย์เสียงสูงใส (โน้ต B5)
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime); // ระดับความดัง
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.12); // ให้เสียงดังเป็นเวลา 0.12 วินาทีแล้วดับ
+        } catch (e) {
+            console.error("เบราว์เซอร์ไม่รองรับระบบเสียงอัตโนมัติ:", e);
+        }
+    }
+
     function triggerGreenFlash() {
         const flash = document.getElementById('flashOverlay');
         flash.style.display = 'block';
@@ -333,7 +354,6 @@
         });
     }
 
-    // ฟังก์ชันเคลียร์ค่าในป็อปอัปให้กลับมาเป็นเลข 1 เสมอ
     function resetModal() {
         document.getElementById('qtyInput').value = 1;
     }
@@ -409,11 +429,12 @@
         if (isModalOpen) return; 
         
         isModalOpen = true; 
-        triggerGreenFlash(); 
+        playBeepSound(); // 🔊 ส่งเสียงติ๊ดทันทีที่ยิงโดนบาร์โค้ด
+        triggerGreenFlash(); // 🟢 หน้าจอกะพริบสีเขียว
         
         lastScannedBarcode = decodedText;
         document.getElementById('modalBarcodeTxt').innerText = decodedText;
-        resetModal(); // รีเซ็ตค่าให้กลายเป็น 1 ทุกครั้งที่สแกนชิ้นใหม่
+        resetModal(); 
 
         document.getElementById('qtyModal').style.display = 'flex';
     }
@@ -460,8 +481,8 @@
             if(data && data.length > 0) {
                 historyBody.innerHTML = '';
                 data.forEach(item => {
-                    // ตรวจสอบตัวแปรเวลาให้รองรับทุกรูปแบบโครงสร้างเพื่อแก้ปัญหารายการขึ้น undefined
-                    let displayTime = item.time || item.timestamp || item.Timestamp || item.date || item.formattedTime || '-';
+                    // 🛡️ ดักจับชื่อตัวแปรทุกรูปแบบ + ดึงค่าแถวแรกสุดมาแทนกรณีแปรหลุดล็อก เพื่อแก้ปัญหาคำว่า undefined
+                    let displayTime = item.เวลา || item.time || item.timestamp || item.Timestamp || item.date || item.formattedTime || (Object.values(item)[0] ? Object.values(item)[0] : '-');
                     
                     historyBody.innerHTML += `
                         <tr>
