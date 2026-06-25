@@ -169,7 +169,7 @@
             width: 100%;
             height: 100%;
             background: rgba(15, 23, 42, 0.6);
-            display: none; /* เริ่มต้นซ่อนไว้ */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 9998;
@@ -282,36 +282,35 @@
         <table class="history-table" id="historyTable" style="display: none;">
             <thead>
                 <tr>
-                    <th style="width: 25%;">เวลา</th>
-                    <th style="width: 20%;">คลัง</th>
-                    <th style="width: 40%;">รหัสบาร์โค้ด</th>
-                    <th style="width: 15%; text-align: center;">จำนวน</th>
+                    <th style="width: 28%;">เวลา</th>
+                    <th style="width: 22%;">คลัง</th>
+                    <th style="width: 38%;">รหัสบาร์โค้ด</th>
+                    <th style="width: 12%; text-align: center;">จำนวน</th>
                 </tr>
             </thead>
             <tbody id="historyBody">
-                </tbody>
+            </tbody>
         </table>
         <div class="status-loading" id="tableStatus">กำลังโหลดประวัติ...</div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // ⚠️ อย่าลืมใส่ลิงก์ WEB APP ล่าสุดของคุณที่บรรทัดนี้ ⚠️
-    // ==========================================
-    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx7FwnlnlJRiaB6qoWyOays0944qm30TDBs_cZCgCE3UNe6-W56ErB42vwYJFbjiXayqw/exec"; 
+    // ========================================================
+    // ⚠️ สำคัญมาก: ลบข้อความข้างล่างนี้แล้ววาง URL Web App ของคุณแทนที่ ⚠️
+    // ========================================================
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwlxxuInw7EyJKaMAdcpjZ5-CAEfEEs0wF6UWfPUpBspJBxpmUIkTGIDr89BASFLxTlnQ/exec"; 
 
     let currentChannel = 'FG';
     let html5QrcodeScanner = null;
     let isScanning = false;
-    let isModalOpen = false; // ตรวจสอบว่าหน้าต่างจำนวนเปิดอยู่หรือไม่
+    let isModalOpen = false; 
     let lastScannedBarcode = ""; 
 
     window.onload = function() {
         loadHistory();
     };
 
-    // ฟังก์ชันสั่งให้หน้าจอกะพริบสีเขียวสั้นๆ
     function triggerGreenFlash() {
         const flash = document.getElementById('flashOverlay');
         flash.style.display = 'block';
@@ -332,6 +331,11 @@
                 btn.classList.remove('active');
             }
         });
+    }
+
+    // ฟังก์ชันเคลียร์ค่าในป็อปอัปให้กลับมาเป็นเลข 1 เสมอ
+    function resetModal() {
+        document.getElementById('qtyInput').value = 1;
     }
 
     function changeQty(amount) {
@@ -366,7 +370,7 @@
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    fps: 30, // สปีดความไวสูงสุด
+                    fps: 30, 
                     qrbox: function(width, height) {
                         return { width: width * 0.85, height: height * 0.45 }; 
                     },
@@ -401,29 +405,22 @@
         }
     }
 
-    // เมื่อกล้องสแกนติดบาร์โค้ดสำเร็จ
     function onScanSuccess(decodedText, decodedResult) {
-        // ถ้าหน้าต่างกรอกจำนวนเปิดค้างอยู่ ให้ข้ามไปเลยเพื่อกันข้อมูลซ้ำซ้อน
         if (isModalOpen) return; 
         
-        isModalOpen = true; // ล็อกสถานะทันทีกันยิงซ้ำ
-        triggerGreenFlash(); // กะพริบจอเขียวทันใจ
+        isModalOpen = true; 
+        triggerGreenFlash(); 
         
         lastScannedBarcode = decodedText;
         document.getElementById('modalBarcodeTxt').innerText = decodedText;
-        document.getElementById('qtyInput').value = 1; // ตั้งค่าเริ่มต้นจำนวนชิ้นเป็น 1
+        resetModal(); // รีเซ็ตค่าให้กลายเป็น 1 ทุกครั้งที่สแกนชิ้นใหม่
 
-        // เปิด POPUP เด้งขึ้นมาบังหน้ากล้องทันที (โดยไม่ต้องสั่งปิดกล้อง เพื่อความเร็วสูงสุด)
         document.getElementById('qtyModal').style.display = 'flex';
     }
 
-    function onScanError(err) {
-        // ปล่อยว่างเพื่อไม่ให้ขัดจังหวะระบบประมวลผลกล้องความเร็วสูง
-    }
+    function onScanError(err) { }
 
-    // ฟังก์ชันทำงานเมื่อกดปุ่ม "บันทึกข้อมูล" ใน POPUP
     function submitData() {
-        // ซ่อนหน้าต่างป็อปอัปทันทีเพื่อความต่อเนื่อง
         document.getElementById('qtyModal').style.display = 'none';
         showAlert("⏳ กำลังบันทึกข้อมูลเข้าสู่ระบบ...", false);
         
@@ -443,8 +440,8 @@
             showAlert("✅ บันทึกสำเร็จเรียบร้อย!", false);
             setTimeout(() => { showAlert(null); }, 1200); 
             
-            isModalOpen = false; // ปลดล็อกหน้าต่าง ให้กล้องหลังบ้านพร้อมรับคิวต่อไปทันที
-            loadHistory(); // รีเฟรชตารางประวัติ
+            isModalOpen = false; 
+            loadHistory(); 
         })
         .catch(err => {
             showAlert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล");
@@ -452,7 +449,6 @@
         });
     }
 
-    // ดึงประวัติพร้อมรองรับคอลัมน์เวลาทุกรูปแบบชื่อแปร
     function loadHistory() {
         const tableStatus = document.getElementById('tableStatus');
         const historyTable = document.getElementById('historyTable');
@@ -464,12 +460,12 @@
             if(data && data.length > 0) {
                 historyBody.innerHTML = '';
                 data.forEach(item => {
-                    // ดึงค่าเวลา (รองรับทุกล็อกชื่อคอลัมน์ที่ระบบหลังบ้านอาจจะส่งมา)
-                    let displayTime = item.time || item.timestamp || item.Timestamp || item.date || '-';
+                    // ตรวจสอบตัวแปรเวลาให้รองรับทุกรูปแบบโครงสร้างเพื่อแก้ปัญหารายการขึ้น undefined
+                    let displayTime = item.time || item.timestamp || item.Timestamp || item.date || item.formattedTime || '-';
                     
                     historyBody.innerHTML += `
                         <tr>
-                            <td style="color: #64748b; font-weight: 500;">${displayTime}</td>
+                            <td style="color: #64748b; font-weight: 500; font-size:11px;">${displayTime}</td>
                             <td>${item.channel}</td>
                             <td style="font-weight: 500; color: #1e293b; word-break: break-all;">${item.barcode}</td>
                             <td style="text-align: center; font-weight:600;">${item.qty}</td>
