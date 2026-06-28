@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V12 (สแกนบาร์โค้ดยาวพิเศษ)</title>
-    <!-- นำเข้าฟอนต์ Prompt -->
+    <title>ระบบสแกนสต็อกสินค้า V13 (เน้นความแม่นยำสูงสุด)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <!-- นำเข้าไลบรารีสแกนบาร์โค้ด -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
@@ -256,7 +254,6 @@
 
 <div id="flashOverlay"></div>
 
-<!-- หน้าต่างป็อปอัปกรอกจำนวน (Modal) -->
 <div class="modal-overlay" id="qtyModal">
     <div class="modal-content">
         <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 สแกนสำเร็จ!</div>
@@ -422,14 +419,25 @@
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    fps: 30, 
-                    // 🚀 [แก้ไขสแกนยาก] ขยายกล่องสแกนเนอร์ให้กว้างและสูงขึ้นมากเป็นพิเศษ เพื่อรองรับบาร์โค้ดแถบยาว
+                    // ⏱️ [ปรับปรุงความแม่นยำ] ช้าลงเพื่อความชัวร์ ให้เวลาเลนส์กล้องล็อกโฟกัสภาพชัดๆ
+                    fps: 10, 
+                    // 📐 ปรับขนาดกล่องสแกนเนอร์ให้เป็นทรงผอมยาวแนวนอน เหมาะเจาะกับ 1D Barcode ยาวๆ พิเศษ
                     qrbox: function(width, height) {
                         return { 
                             width: Math.floor(width * 0.95), 
-                            height: Math.floor(height * 0.65) 
+                            height: Math.floor(height * 0.40) 
                         }; 
                     },
+                    // 🎯 ล็อกเป้าหมายเฉพาะบาร์โค้ดแท่งมาตรฐานสินค้า ไม่สแกนสุ่มฟอร์แมตอื่นเพื่อป้องกันข้อมูลเพี้ยน
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.ITF
+                    ],
                     experimentalFeatures: {
                         useBarCodeDetectorIfSupported: true
                     }
