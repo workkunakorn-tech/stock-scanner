@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V14 (Fast & Accurate Code 39)</title>
+    <title>ระบบสแกนสต็อกสินค้า V16 (พร้อมปุ่มยกเลิก)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -87,14 +87,40 @@
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
             margin-bottom: 20px;
         }
-        /* พื้นที่กล้องสแกน */
-        #reader {
+        
+        /* พื้นที่กล้องสแกนและตัวช่วยเล็งโฟกัส */
+        .scanner-wrapper {
+            position: relative;
             width: 100%;
             border-radius: 16px;
             overflow: hidden;
-            border: none !important;
             margin-bottom: 15px;
+            background: #000;
         }
+        #reader {
+            width: 100%;
+            border: none !important;
+        }
+        /* เส้นเลเซอร์สีแดงช่วยโฟกัสตรงกลางกล่อง */
+        .laser-line {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+            z-index: 10;
+            pointer-events: none;
+            transform: translateY(-50%);
+            animation: blinkLaser 1s infinite;
+        }
+        @keyframes blinkLaser {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
         /* กล่องแจ้งเตือนสถานะ */
         .alert-box {
             display: none;
@@ -146,7 +172,7 @@
             font-size: 13px;
         }
 
-        /* เอฟเฟกต์หน้าจอกะพริบสีเขียวเมื่อสแกนสำเร็จ */
+        /* เอฟเฟกต์หน้าจอกะพริบเมื่อสแกนสำเร็จ */
         #flashOverlay {
             position: fixed;
             top: 0;
@@ -161,7 +187,7 @@
             transition: opacity 0.03s ease-out;
         }
 
-        /* หน้าต่างป็อปอัปกรอกจำนวนสินค้า (Modal Overlay) */
+        /* หน้าต่างป็อปอัปกรอกจำนวนสินค้า */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -236,6 +262,8 @@
             border-color: #2563eb;
             background: #f8fafc;
         }
+        
+        /* ปุ่มบันทึกข้อมูล */
         .btn-submit {
             background: #22c55e;
             color: white;
@@ -247,6 +275,25 @@
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+            margin-bottom: 10px;
+        }
+        
+        /* ❌ ปุ่มยกเลิกที่เพิ่มเข้ามาใหม่ */
+        .btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            color: #475569;
         }
     </style>
 </head>
@@ -256,8 +303,8 @@
 
 <div class="modal-overlay" id="qtyModal">
     <div class="modal-content">
-        <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 สแกนสำเร็จ!</div>
-        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า:</div>
+        <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 ตรวจสอบรหัสถูกต้อง!</div>
+        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า (ตรวจสอบ 3 ชั้นแล้ว):</div>
         <div class="modal-barcode" id="modalBarcodeTxt">---------</div>
         
         <div class="section-title">ระบุจำนวนสินค้า (พิมพ์เลขหรือกดปุ่มได้)</div>
@@ -268,6 +315,7 @@
         </div>
         
         <button class="btn-submit" onclick="submitData()">💾 บันทึกข้อมูล</button>
+        <button class="btn-cancel" onclick="cancelScan()">❌ ยกเลิกการบันทึก</button>
     </div>
 </div>
 
@@ -283,7 +331,10 @@
     
     <button class="btn-scan-toggle" id="scanBtn" onclick="toggleScanner()">📷 เปิดกล้องสแกนเนอร์</button>
     
-    <div id="reader"></div>
+    <div class="scanner-wrapper">
+        <div class="laser-line" id="laser"></div>
+        <div id="reader"></div>
+    </div>
     
     <div class="alert-box" id="alertBox"></div>
     
@@ -309,7 +360,7 @@
     // ========================================================
     // ⚠️ สำคัญมาก: ลบข้อความข้างล่างนี้แล้ววาง URL Web App ของคุณแทนที่ ⚠️
     // ========================================================
-    const BACKEND_URL = "วาง_URL_เว็บแอป_ของคุณที่นี่"; 
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxxA5PTMRnfCczlWsvKqKRLGIpctv4BDW5syP9bhttX_h6MbkxSYJh0KprI_mO2b6fruA/exec"; 
 
     let currentChannel = 'FG';
     let html5QrcodeScanner = null;
@@ -317,6 +368,10 @@
     let isModalOpen = false; 
     let lastScannedBarcode = ""; 
     let audioCtx = null; 
+
+    // ตัวแปรควบคุมระบบตรวจสอบความถูกต้อง 3 ชั้น
+    let consecutiveCount = 0;
+    let lastCheckedText = "";
 
     window.onload = function() {
         loadHistory();
@@ -410,31 +465,33 @@
         initAudio(); 
         
         const scanBtn = document.getElementById('scanBtn');
+        const laser = document.getElementById('laser');
+
         if (!isScanning) {
             showAlert(null);
             scanBtn.innerText = "🛑 ปิดกล้องสแกนเนอร์";
             scanBtn.style.background = "#dc2626";
+            laser.style.display = "block"; 
             
+            consecutiveCount = 0;
+            lastCheckedText = "";
+
             html5QrcodeScanner = new Html5Qrcode("reader");
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    // ⚡ [เพิ่มความเร็วเต็มสปีด] เพื่อตอบสนองไวแบบแอปพลิเคชันต้นแบบ
-                    fps: 25, 
-                    // 📐 ขนาดกล่องสแกนเนอร์แนวนอนผอมยาว ครอบคลุมแถบโค้ด 13 หลักได้ครบถ้วน
+                    fps: 8, 
                     qrbox: function(width, height) {
                         return { 
                             width: Math.floor(width * 0.95), 
-                            height: Math.floor(height * 0.45) 
+                            height: Math.floor(height * 0.35) 
                         }; 
                     },
-                    // 🎯 [ล็อกเป้าแม่นยำสูง] บังคับสแกนเฉพาะ Code 39 และ Code 128 เท่านั้น ตัดสิ่งรบกวนภายนอก
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_39,
                         Html5QrcodeSupportedFormats.CODE_128
                     ],
                     experimentalFeatures: {
-                        // 🚀 เรียกใช้ระบบชิปประมวลผลบาร์โค้ดของมือถือโดยตรง เพื่อความเร็วและถูกต้องขั้นสุด
                         useBarCodeDetectorIfSupported: true
                     }
                 },
@@ -445,6 +502,7 @@
             }).catch(err => {
                 scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์";
                 scanBtn.style.background = "#2563eb";
+                laser.style.display = "none";
                 isScanning = false;
                 showAlert(`❌ กล้องไม่ทำงาน: เปิดลิงก์นี้บน Chrome หรือ Safari โดยตรง`);
             });
@@ -455,11 +513,13 @@
 
     function stopScanner() {
         const scanBtn = document.getElementById('scanBtn');
+        const laser = document.getElementById('laser');
         if (html5QrcodeScanner && isScanning) {
             html5QrcodeScanner.stop().then(() => {
                 document.getElementById('reader').innerHTML = '';
                 scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์";
                 scanBtn.style.background = "#2563eb";
+                laser.style.display = "none";
                 isScanning = false;
             }).catch(err => console.error(err));
         }
@@ -467,8 +527,23 @@
 
     function onScanSuccess(decodedText, decodedResult) {
         if (isModalOpen) return; 
+
+        if (decodedText === lastCheckedText) {
+            consecutiveCount++;
+        } else {
+            lastCheckedText = decodedText;
+            consecutiveCount = 1;
+            return; 
+        }
+
+        if (consecutiveCount < 3) {
+            return; 
+        }
         
         isModalOpen = true; 
+        consecutiveCount = 0;
+        lastCheckedText = "";
+
         playBeepSound(); 
         triggerGreenFlash(); 
         
@@ -486,6 +561,17 @@
     }
 
     function onScanError(err) { }
+
+    // 🛑 ฟังก์ชันยกเลิกการบันทึกข้อมูล (เพิ่มเข้ามาใหม่)
+    function cancelScan() {
+        document.getElementById('qtyModal').style.display = 'none'; // ปิดหน้าต่างป็อปอัป
+        isModalOpen = false; // ปลดล็อกสถานะเพื่อให้ระบบกล้องพร้อมรับการสแกนรอบใหม่ได้ทันที
+        consecutiveCount = 0; // ล้างค่าความถถี่ตัวสแกนเก่า
+        lastCheckedText = "";
+        
+        showAlert("❌ ยกเลิกการบันทึกรายการแล้ว", true);
+        setTimeout(() => { showAlert(null); }, 1000); // แสดงข้อความแจ้งเตือนแป๊บนึงแล้วซ่อนซะ
+    }
 
     function submitData() {
         const qtyInput = document.getElementById('qtyInput');
