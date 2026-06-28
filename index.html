@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V11 (พิมพ์เลขลื่นไหล 100%)</title>
+    <title>ระบบสแกนสต็อกสินค้า V12 (สแกนบาร์โค้ดยาวพิเศษ)</title>
+    <!-- นำเข้าฟอนต์ Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- นำเข้าไลบรารีสแกนบาร์โค้ด -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
@@ -229,7 +231,7 @@
             outline: none;
             color: #1e293b;
             background: #ffffff;
-            -webkit-appearance: none; /* ลบลูกศรของ iOS เพื่อความสวยงาม */
+            -webkit-appearance: none;
             margin: 0;
         }
         .qty-display:focus {
@@ -254,6 +256,7 @@
 
 <div id="flashOverlay"></div>
 
+<!-- หน้าต่างป็อปอัปกรอกจำนวน (Modal) -->
 <div class="modal-overlay" id="qtyModal">
     <div class="modal-content">
         <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 สแกนสำเร็จ!</div>
@@ -309,7 +312,7 @@
     // ========================================================
     // ⚠️ สำคัญมาก: ลบข้อความข้างล่างนี้แล้ววาง URL Web App ของคุณแทนที่ ⚠️
     // ========================================================
-    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwlxxuInw7EyJKaMAdcpjZ5-CAEfEEs0wF6UWfPUpBspJBxpmUIkTGIDr89BASFLxTlnQ/exec"; 
+    const BACKEND_URL = "วาง_URL_เว็บแอป_ของคุณที่นี่"; 
 
     let currentChannel = 'FG';
     let html5QrcodeScanner = null;
@@ -420,8 +423,12 @@
                 { facingMode: "environment" }, 
                 {
                     fps: 30, 
+                    // 🚀 [แก้ไขสแกนยาก] ขยายกล่องสแกนเนอร์ให้กว้างและสูงขึ้นมากเป็นพิเศษ เพื่อรองรับบาร์โค้ดแถบยาว
                     qrbox: function(width, height) {
-                        return { width: width * 0.85, height: height * 0.45 }; 
+                        return { 
+                            width: Math.floor(width * 0.95), 
+                            height: Math.floor(height * 0.65) 
+                        }; 
                     },
                     experimentalFeatures: {
                         useBarCodeDetectorIfSupported: true
@@ -467,11 +474,10 @@
 
         document.getElementById('qtyModal').style.display = 'flex';
 
-        // 🔥 วิ่งไปโฟกัสที่ช่องกรอกจำนวนอัตโนมัติ เพื่อดึงแป้นพิมพ์ตัวเลขขึ้นมาทันที
         setTimeout(() => {
             const qtyInput = document.getElementById('qtyInput');
             qtyInput.focus();
-            qtyInput.select(); // คลุมดำเลข 1 ให้พร้อมพิมพ์เลขอื่นทับได้ทันที
+            qtyInput.select(); 
         }, 100);
     }
 
