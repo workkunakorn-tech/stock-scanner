@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V13 (เน้นความแม่นยำสูงสุด)</title>
+    <title>ระบบสแกนสต็อกสินค้า V14 (Fast & Accurate Code 39)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -419,26 +419,22 @@
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    // ⏱️ [ปรับปรุงความแม่นยำ] ช้าลงเพื่อความชัวร์ ให้เวลาเลนส์กล้องล็อกโฟกัสภาพชัดๆ
-                    fps: 10, 
-                    // 📐 ปรับขนาดกล่องสแกนเนอร์ให้เป็นทรงผอมยาวแนวนอน เหมาะเจาะกับ 1D Barcode ยาวๆ พิเศษ
+                    // ⚡ [เพิ่มความเร็วเต็มสปีด] เพื่อตอบสนองไวแบบแอปพลิเคชันต้นแบบ
+                    fps: 25, 
+                    // 📐 ขนาดกล่องสแกนเนอร์แนวนอนผอมยาว ครอบคลุมแถบโค้ด 13 หลักได้ครบถ้วน
                     qrbox: function(width, height) {
                         return { 
                             width: Math.floor(width * 0.95), 
-                            height: Math.floor(height * 0.40) 
+                            height: Math.floor(height * 0.45) 
                         }; 
                     },
-                    // 🎯 ล็อกเป้าหมายเฉพาะบาร์โค้ดแท่งมาตรฐานสินค้า ไม่สแกนสุ่มฟอร์แมตอื่นเพื่อป้องกันข้อมูลเพี้ยน
+                    // 🎯 [ล็อกเป้าแม่นยำสูง] บังคับสแกนเฉพาะ Code 39 และ Code 128 เท่านั้น ตัดสิ่งรบกวนภายนอก
                     formatsToSupport: [
-                        Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.ITF
+                        Html5QrcodeSupportedFormats.CODE_128
                     ],
                     experimentalFeatures: {
+                        // 🚀 เรียกใช้ระบบชิปประมวลผลบาร์โค้ดของมือถือโดยตรง เพื่อความเร็วและถูกต้องขั้นสุด
                         useBarCodeDetectorIfSupported: true
                     }
                 },
