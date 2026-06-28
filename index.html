@@ -3,296 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V17 (Fast & Accurate 13-Chars)</title>
+    <title>ระบบสแกนสต็อกสินค้า V17.1 (Pure Clean Version)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Prompt', sans-serif;
-        }
-        body {
-            background-color: #f6f8fa;
-            margin: 0;
-            padding: 20px 10px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-        .container {
-            background: #ffffff;
-            width: 100%;
-            max-width: 450px;
-            border-radius: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            padding: 24px;
-            position: relative;
-        }
-        .header {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 20px;
-        }
-        .section-title {
-            font-size: 14px;
-            color: #64748b;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { background-color: #f6f8fa; margin: 0; padding: 20px 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        .container { background: #ffffff; width: 100%; max-width: 450px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 24px; position: relative; }
+        .header { text-align: center; font-size: 22px; font-weight: 600; color: #1e293b; margin-bottom: 15px; }
+        .section-title { font-size: 14px; color: #64748b; font-weight: 500; margin-bottom: 8px; }
+        
+        /* 👤 กล่องกรอกชื่อแบบมินิมอล ไม่รบกวนหน้าตาแอปเดิม */
+        .user-input-box { display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 14px; margin-bottom: 20px; }
+        .user-input-box span { font-size: 13px; color: #64748b; white-space: nowrap; font-weight: 500; }
+        .user-input-box input { width: 100%; border: none; background: transparent; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; }
+        
         /* เลือกคลังสินค้า */
-        .channel-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .btn-channel {
-            background: #f1f5f9;
-            border: 2px solid transparent;
-            padding: 12px 5px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #475569;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-        .btn-channel.active {
-            background: #eff6ff;
-            border-color: #2563eb;
-            color: #2563eb;
-        }
+        .channel-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .btn-channel { background: #f1f5f9; border: 2px solid transparent; padding: 12px 5px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #475569; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .btn-channel.active { background: #eff6ff; border-color: #2563eb; color: #2563eb; }
+        
         /* ปุ่มเปิดกล้อง */
-        .btn-scan-toggle {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-            margin-bottom: 20px;
-        }
+        .btn-scan-toggle { display: flex; justify-content: center; align-items: center; gap: 8px; background: #2563eb; color: white; border: none; width: 100%; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); margin-bottom: 20px; }
         
-        /* พื้นที่กล้องสแกนและเลเซอร์ช่วยเล็ง */
-        .scanner-wrapper {
-            position: relative;
-            width: 100%;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            background: #000;
-        }
-        #reader {
-            width: 100%;
-            border: none !important;
-        }
-        /* เส้นเลเซอร์สีแดงนำสายตา */
-        .laser-line {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 5%;
-            width: 90%;
-            height: 2px;
-            background-color: #ef4444;
-            box-shadow: 0 0 8px #ef4444;
-            z-index: 10;
-            pointer-events: none;
-            transform: translateY(-50%);
-            animation: blinkLaser 1s infinite;
-        }
-        @keyframes blinkLaser {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
+        .scanner-wrapper { position: relative; width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 15px; background: #000; }
+        #reader { width: 100%; border: none !important; }
+        .laser-line { display: none; position: absolute; top: 50%; left: 5%; width: 90%; height: 2px; background-color: #ef4444; box-shadow: 0 0 8px #ef4444; z-index: 10; pointer-events: none; transform: translateY(-50%); animation: blinkLaser 1s infinite; }
+        @keyframes blinkLaser { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-        /* แจ้งเตือนสถานะ */
-        .alert-box {
-            display: none;
-            background: #fef2f2;
-            border: 1px solid #fee2e2;
-            color: #dc2626;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            text-align: center;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        /* ตารางประวัติ */
-        .history-section {
-            margin-top: 10px;
-        }
-        .history-title {
-            font-size: 15px;
-            font-weight: 500;
-            color: #475569;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .history-table th {
-            color: #94a3b8;
-            font-weight: 400;
-            padding: 8px 4px;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .history-table td {
-            padding: 12px 4px;
-            color: #334155;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-        .status-loading {
-            text-align: center;
-            color: #94a3b8;
-            padding: 20px 0;
-            font-size: 13px;
-        }
-
-        /* เอฟเฟกต์หน้าจอกะพริบสีเขียว */
-        #flashOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(34, 197, 94, 0.7);
-            z-index: 99999;
-            pointer-events: none;
-            opacity: 0;
-            display: none;
-            transition: opacity 0.03s ease-out;
-        }
-
-        /* หน้าต่างป็อปอัปกรอกจำนวนสินค้า */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            display: none; 
-            justify-content: center;
-            align-items: center;
-            z-index: 9998;
-            padding: 20px;
-        }
-        .modal-content {
-            background: white;
-            width: 100%;
-            max-width: 380px;
-            border-radius: 24px;
-            padding: 24px;
-            text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            animation: popUp 0.15s ease-out;
-        }
-        @keyframes popUp {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .modal-barcode {
-            background: #f1f5f9;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #1e293b;
-            margin: 10px 0 20px 0;
-            word-break: break-all;
-        }
-        .qty-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 24px;
-        }
-        .btn-qty {
-            background: #f1f5f9;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            font-size: 26px;
-            font-weight: 600;
-            color: #1e293b;
-            cursor: pointer;
-            user-select: none;
-        }
-        .qty-display {
-            font-size: 26px;
-            font-weight: 600;
-            width: 110px;
-            text-align: center;
-            border: 2px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 8px 5px;
-            outline: none;
-            color: #1e293b;
-            background: #ffffff;
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .qty-display:focus {
-            border-color: #2563eb;
-            background: #f8fafc;
-        }
+        .alert-box { display: none; background: #fef2f2; border: 1px solid #fee2e2; color: #dc2626; padding: 12px; border-radius: 12px; font-size: 13px; text-align: center; margin-bottom: 20px; }
         
-        .btn-submit {
-            background: #22c55e;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-            margin-bottom: 10px;
-        }
-        
-        .btn-cancel {
-            background: #f1f5f9;
-            color: #64748b;
-            border: none;
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-cancel:hover {
-            background: #e2e8f0;
-            color: #475569;
-        }
+        /* ตารางประวัติสไตล์ V17 เดิมเป๊ะ */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .history-table th { color: #94a3b8; font-weight: 400; padding: 8px 4px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+        .history-table td { padding: 12px 4px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .status-loading { text-align: center; color: #94a3b8; padding: 20px 0; font-size: 13px; }
+
+        #flashOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(34, 197, 94, 0.7); z-index: 99999; pointer-events: none; opacity: 0; display: none; }
+
+        /* ป็อปอัปกรอกจำนวน */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 9998; padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 380px; border-radius: 24px; padding: 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-barcode { background: #f1f5f9; padding: 10px 12px; border-radius: 10px; font-size: 16px; font-weight: 600; color: #1e293b; margin: 10px 0 20px 0; }
+        .qty-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 24px; }
+        .btn-qty { background: #f1f5f9; border: none; width: 50px; height: 50px; border-radius: 12px; font-size: 26px; font-weight: 600; cursor: pointer; }
+        .qty-display { font-size: 26px; font-weight: 600; width: 110px; text-align: center; border: 2px solid #cbd5e1; border-radius: 12px; padding: 8px 5px; outline: none; }
+        .btn-submit { background: #22c55e; color: white; border: none; width: 100%; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); margin-bottom: 10px; }
+        .btn-cancel { background: #f1f5f9; color: #64748b; border: none; width: 100%; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -302,24 +62,29 @@
 <div class="modal-overlay" id="qtyModal">
     <div class="modal-content">
         <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 สแกนสำเร็จและถูกต้อง!</div>
-        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า (ตรวจสอบ 13 หลักตรงเป๊ะ):</div>
+        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า (13 หลัก):</div>
         <div class="modal-barcode" id="modalBarcodeTxt">---------</div>
         
-        <div class="section-title">ระบุจำนวนสินค้า (พิมพ์เลขหรือกดปุ่มได้)</div>
+        <div class="section-title">ระบุจำนวนสินค้า</div>
         <div class="qty-container">
             <button class="btn-qty" onclick="changeQty(-1)">-</button>
-            <input type="number" class="qty-display" id="qtyInput" value="1" min="1" inputmode="numeric" pattern="[0-9]*" onclick="this.select()" onfocus="this.select()" oninput="validateInput(this)">
+            <input type="number" class="qty-display" id="qtyInput" value="1" min="1" inputmode="numeric" pattern="[0-9]*" onclick="this.select()">
             <button class="btn-qty" onclick="changeQty(1)">+</button>
         </div>
         
         <button class="btn-submit" onclick="submitData()">💾 บันทึกข้อมูล</button>
-        <button class="btn-cancel" onclick="cancelScan()">❌ ยกเลิกการบันทึก</button>
+        <button class="btn-cancel" onclick="cancelScan()">❌ ยกเลิก</button>
     </div>
 </div>
 
 <div class="container">
     <div class="header">📦 ระบบนับ STOCK สินค้า</div>
     
+    <div class="user-input-box">
+        <span>👤 ผู้บันทึก:</span>
+        <input type="text" id="usernameInput" placeholder="พิมพ์ชื่อผู้สแกนข้อมูล..." oninput="saveUser()">
+    </div>
+
     <div class="section-title">เลือก ช่องทาง / CHANNEL</div>
     <div class="channel-container">
         <div class="btn-channel active" onclick="selectChannel('FG')">FG</div>
@@ -336,29 +101,26 @@
     
     <div class="alert-box" id="alertBox"></div>
     
-    <div class="history-section">
-        <div class="history-title">📋 5 รายการล่าสุด (รหัสบาร์โค้ด)</div>
+    <div style="margin-top: 10px;">
+        <div style="font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 12px;">📋 5 รายการล่าสุดวันนี้</div>
         <table class="history-table" id="historyTable" style="display: none;">
             <thead>
                 <tr>
-                    <th style="width: 32%;">เวลา</th>
-                    <th style="width: 22%;">คลัง</th>
-                    <th style="width: 34%;">รหัสบาร์โค้ด</th>
+                    <th style="width: 22%;">เวลา</th>
+                    <th style="width: 23%;">คลัง</th>
+                    <th style="width: 43%;">รายการสินค้า</th>
                     <th style="width: 12%; text-align: center;">จำนวน</th>
                 </tr>
             </thead>
-            <tbody id="historyBody">
-            </tbody>
+            <tbody id="historyBody"></tbody>
         </table>
         <div class="status-loading" id="tableStatus">กำลังโหลดประวัติ...</div>
     </div>
 </div>
 
 <script>
-    // ========================================================
-    // ⚠️ สำคัญมาก: ลบข้อความข้างล่างนี้แล้ววาง URL Web App ของคุณแทนที่ ⚠️
-    // ========================================================
-    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx4gPAmt_5cufm1icIera0rV6J8Cxol5k8HVGmM8e3vhYuuEVJZ1XpR5htRSLMG5wjw7w/exec"; 
+    // ⚠️ นำ URL Web App ของคุณมาวางแทนที่ข้อความนี้
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx1V60jffHv2NLc_6AdsRiGM4YVqJOSwFpxZnH7c05YEN09r1l09IZRA4AQTU48FmeELQ/exec"; 
 
     let currentChannel = 'FG';
     let html5QrcodeScanner = null;
@@ -366,70 +128,51 @@
     let isModalOpen = false; 
     let lastScannedBarcode = ""; 
     let audioCtx = null; 
-
-    // ตัวแปรควบคุมระบบตรวจสอบความถูกต้องแบบรวดเร็ว
     let consecutiveCount = 0;
     let lastCheckedText = "";
 
     window.onload = function() {
+        // ดึงชื่อเดิมที่เคยกรอกไว้มาใส่ให้อัตโนมัติ
+        const savedUser = localStorage.getItem('stock_scanner_user');
+        if (savedUser) {
+            document.getElementById('usernameInput').value = savedUser;
+        }
         loadHistory();
     };
 
+    function saveUser() {
+        const name = document.getElementById('usernameInput').value.trim();
+        localStorage.setItem('stock_scanner_user', name);
+    }
+
     function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playBeepSound() {
         try {
-            initAudio(); 
-            if (!audioCtx) return;
-
+            initAudio();
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
-            oscillator.type = 'sine'; 
-            oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime); 
-            gainNode.gain.setValueAtTime(0.20, audioCtx.currentTime); 
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.10); 
-        } catch (e) {
-            console.error("ระบบเล่นเสียงขัดข้อง:", e);
-        }
+            oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.20, audioCtx.currentTime);
+            oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+            oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.10);
+        } catch (e) {}
     }
 
     function triggerGreenFlash() {
         const flash = document.getElementById('flashOverlay');
-        flash.style.display = 'block';
-        flash.style.opacity = '1';
-        
-        setTimeout(() => {
-            flash.style.opacity = '0';
-            setTimeout(() => { flash.style.display = 'none'; }, 30);
-        }, 120);
+        flash.style.display = 'block'; flash.style.opacity = '1';
+        setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => { flash.style.display = 'none'; }, 30); }, 120);
     }
 
     function selectChannel(channelName) {
         currentChannel = channelName;
         document.querySelectorAll('.btn-channel').forEach(btn => {
-            if(btn.innerText === channelName) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if(btn.innerText === channelName) btn.classList.add('active'); else btn.classList.remove('active');
         });
-    }
-
-    function resetModal() {
-        document.getElementById('qtyInput').value = 1;
     }
 
     function changeQty(amount) {
@@ -440,24 +183,6 @@
         qtyInput.value = currentVal;
     }
 
-    function validateInput(input) {
-        if (input.value !== '' && parseInt(input.value) < 1) {
-            input.value = 1;
-        }
-    }
-
-    // แก้ไขข้อความบั๊กกวนใจเพื่อให้สแกนไหลลื่น
-    function cleanHtml5QrcodeLabels() {
-        setTimeout(() => {
-            const scp = document.getElementById('html5-qrcode-select-camera');
-            if(scp) scp.style.display = 'none';
-            const stopBtn = document.getElementById('html5-qrcode-button-camera-stop');
-            if(stopBtn) stopBtn.style.display = 'none';
-            const startBtn = document.getElementById('html5-qrcode-button-camera-start');
-            if(startBtn) startBtn.style.display = 'none';
-        }, 150);
-    }
-
     function showAlert(msg, isError = true) {
         const box = document.getElementById('alertBox');
         if(msg) {
@@ -466,61 +191,33 @@
             box.style.borderColor = isError ? "#fee2e2" : "#bbf7d0";
             box.style.color = isError ? "#dc2626" : "#16a34a";
             box.style.display = 'block';
-        } else {
-            box.style.display = 'none';
-        }
+        } else { box.style.display = 'none'; }
     }
 
     function toggleScanner() {
-        initAudio(); 
-        
+        initAudio();
         const scanBtn = document.getElementById('scanBtn');
         const laser = document.getElementById('laser');
 
         if (!isScanning) {
             showAlert(null);
-            scanBtn.innerText = "🛑 ปิดกล้องสแกนเนอร์";
-            scanBtn.style.background = "#dc2626";
-            laser.style.display = "block"; 
-            
-            consecutiveCount = 0;
-            lastCheckedText = "";
+            scanBtn.innerText = "🛑 ปิดกล้องสแกนเนอร์"; scanBtn.style.background = "#dc2626"; laser.style.display = "block";
+            consecutiveCount = 0; lastCheckedText = "";
 
             html5QrcodeScanner = new Html5Qrcode("reader");
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    // ⚡ [เร่งสปีดกล้อง] ปรับเพิ่มเป็น 20 FPS เพื่อให้ตอบสนองฉับไวทันใจ
-                    fps: 20, 
-                    qrbox: function(width, height) {
-                        return { 
-                            width: Math.floor(width * 0.95), 
-                            height: Math.floor(height * 0.40) 
-                        }; 
-                    },
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.CODE_128
-                    ],
-                    experimentalFeatures: {
-                        useBarCodeDetectorIfSupported: true
-                    }
+                    fps: 20,
+                    qrbox: function(width, height) { return { width: Math.floor(width * 0.95), height: Math.floor(height * 0.40) }; },
+                    formatsToSupport: [Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_128]
                 },
-                onScanSuccess,
-                onScanError
-            ).then(() => {
-                isScanning = true;
-                cleanHtml5QrcodeLabels();
-            }).catch(err => {
-                scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์";
-                scanBtn.style.background = "#2563eb";
-                laser.style.display = "none";
-                isScanning = false;
-                showAlert(`❌ กล้องไม่ทำงาน: เปิดลิงก์นี้บน Chrome หรือ Safari โดยตรง`);
+                onScanSuccess, onScanError
+            ).then(() => { isScanning = true; }).catch(err => {
+                scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์"; scanBtn.style.background = "#2563eb"; laser.style.display = "none"; isScanning = false;
+                showAlert(`❌ กล้องไม่ทำงาน: โปรดเปิดลิงก์บน Chrome หรือ Safari โดยตรง`);
             });
-        } else {
-            stopScanner();
-        }
+        } else { stopScanner(); }
     }
 
     function stopScanner() {
@@ -529,77 +226,44 @@
         if (html5QrcodeScanner && isScanning) {
             html5QrcodeScanner.stop().then(() => {
                 document.getElementById('reader').innerHTML = '';
-                scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์";
-                scanBtn.style.background = "#2563eb";
-                laser.style.display = "none";
-                isScanning = false;
-            }).catch(err => console.error(err));
+                scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์"; scanBtn.style.background = "#2563eb"; laser.style.display = "none"; isScanning = false;
+            });
         }
     }
 
-    // 🛡️ ด่านคัดกรองความเร็วสูง + ล็อกความแม่นยำ 13 ตัวอักษร
     function onScanSuccess(decodedText, decodedResult) {
-        if (isModalOpen) return; 
-
-        // ทำความสะอาดข้อมูลเบื้องต้น
+        if (isModalOpen) return;
         let cleanedText = decodedText.trim();
 
-        // 🌟 [หัวใจหลัก] บังคับเลยว่าถ้าบาร์โค้ดอ่านออกมาแล้วยาวไม่ถึง 13 หลัก ให้ปัดทิ้งทันที! 
-        // ป้องกันอาการภาพเบลอแล้วกล้องแอบอ่านตัวอักษรขาดหาย
-        if (cleanedText.length !== 13) {
-            return; 
-        }
+        if (cleanedText.length !== 13) return; // บังคับ 13 หลักเพื่อความเป๊ะของ V17
 
-        // ตรวจสอบความนิ่งซ้ำอีก 1 รอบ (รวมอ่านตรงกัน 2 ครั้งติดต่อกันที่ความเร็วสูง)
-        if (cleanedText === lastCheckedText) {
-            consecutiveCount++;
-        } else {
-            lastCheckedText = cleanedText;
-            consecutiveCount = 1;
-            return; 
-        }
+        if (cleanedText === lastCheckedText) { consecutiveCount++; } 
+        else { lastCheckedText = cleanedText; consecutiveCount = 1; return; }
 
-        if (consecutiveCount < 2) {
-            return; 
-        }
+        if (consecutiveCount < 2) return;
         
-        // เมื่อผ่านด่านล็อก 13 หลัก และนิ่งพอแล้ว -> แสดงผลทันที!
-        isModalOpen = true; 
-        consecutiveCount = 0;
-        lastCheckedText = "";
-
-        playBeepSound(); 
-        triggerGreenFlash(); 
+        isModalOpen = true; consecutiveCount = 0; lastCheckedText = "";
+        playBeepSound(); triggerGreenFlash();
         
         lastScannedBarcode = cleanedText;
         document.getElementById('modalBarcodeTxt').innerText = cleanedText;
-        resetModal(); 
-
+        document.getElementById('qtyInput').value = 1;
         document.getElementById('qtyModal').style.display = 'flex';
-
-        setTimeout(() => {
-            const qtyInput = document.getElementById('qtyInput');
-            qtyInput.focus();
-            qtyInput.select(); 
-        }, 80);
     }
 
-    function onScanError(err) { }
+    function onScanError(err) {}
 
     function cancelScan() {
-        document.getElementById('qtyModal').style.display = 'none'; 
-        isModalOpen = false; 
-        consecutiveCount = 0; 
-        lastCheckedText = "";
-        
+        document.getElementById('qtyModal').style.display = 'none';
+        isModalOpen = false; consecutiveCount = 0; lastCheckedText = "";
         showAlert("❌ ยกเลิกการบันทึกรายการแล้ว", true);
-        setTimeout(() => { showAlert(null); }, 1000); 
+        setTimeout(() => { showAlert(null); }, 1000);
     }
 
     function submitData() {
         const qtyInput = document.getElementById('qtyInput');
         let qty = parseInt(qtyInput.value) || 1;
-        if (qty < 1) qty = 1;
+        const currentUsername = document.getElementById('usernameInput').value.trim() || "-";
 
         document.getElementById('qtyModal').style.display = 'none';
         showAlert("⏳ กำลังบันทึกข้อมูลเข้าสู่ระบบ...", false);
@@ -611,18 +275,18 @@
             body: JSON.stringify({
                 barcode: lastScannedBarcode,
                 channel: currentChannel,
-                qty: qty
+                qty: qty,
+                user: currentUsername // 👤 แอบแนบชื่อส่งไป Google Sheets
             })
         })
         .then(() => {
             showAlert("✅ บันทึกสำเร็จเรียบร้อย!", false);
-            setTimeout(() => { showAlert(null); }, 1200); 
-            
-            isModalOpen = false; 
-            loadHistory(); 
+            setTimeout(() => { showAlert(null); }, 1200);
+            isModalOpen = false;
+            loadHistory();
         })
         .catch(err => {
-            showAlert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล");
+            showAlert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ");
             isModalOpen = false;
         });
     }
@@ -632,50 +296,30 @@
         const historyTable = document.getElementById('historyTable');
         const historyBody = document.getElementById('historyBody');
 
-        fetch(`${BACKEND_URL}?action=getHistory`)
+        fetch(BACKEND_URL)
         .then(res => res.json())
         .then(data => {
             if(data && data.length > 0) {
                 historyBody.innerHTML = '';
                 data.forEach(item => {
-                    let displayTime = "-";
-                    const possibleTimeKeys = ['เวลา', 'time', 'timestamp', 'Timestamp', 'date', 'วันที่', 'dateTime'];
-                    
-                    for (let k of possibleTimeKeys) {
-                        if (item[k] !== undefined && item[k] !== null) {
-                            displayTime = item[k];
-                            break;
-                        }
-                    }
-                    
-                    if (displayTime === "-") {
-                        for (let key in item) {
-                            let lKey = key.toLowerCase();
-                            if (!['channel', 'barcode', 'qty', 'quantity', 'รายการสินค้า', 'คลัง', 'จำนวน'].includes(lKey)) {
-                                displayTime = item[key];
-                                break;
-                            }
-                        }
-                    }
-                    
+                    // ใช้โครงสร้างการแสดงผลตามแบบฉบับ V17 เป๊ะๆ ไม่รกตา
                     historyBody.innerHTML += `
                         <tr>
-                            <td style="color: #64748b; font-weight: 500; font-size:11px;">${displayTime}</td>
-                            <td>${item.channel || item.คลัง || '-'}</td>
-                            <td style="font-weight: 500; color: #1e293b; word-break: break-all;">${item.barcode || '-'}</td>
-                            <td style="text-align: center; font-weight:600;">${item.qty || item.จำนวน || '1'}</td>
+                            <td style="color: #64748b; font-size:11px;">${item.timeStr || '-'}</td>
+                            <td style="font-weight: 500;">${item.channel || '-'}</td>
+                            <td>
+                                <div style="font-weight: 500; color: #1e293b; font-size: 13px;">${item.desc || '-'}</div>
+                                <div style="font-size: 11px; color: #94a3b8;">${item.barcode || '-'}</div>
+                            </td>
+                            <td style="text-align: center; font-weight:600;">${item.qty || '1'}</td>
                         </tr>
                     `;
                 });
                 tableStatus.style.display = 'none';
                 historyTable.style.display = 'table';
-            } else {
-                tableStatus.innerText = 'ยังไม่มีประวัติการบันทึกในวันนี้';
-            }
+            } else { tableStatus.innerText = 'ยังไม่มีประวัติการบันทึกในวันนี้'; }
         })
-        .catch(err => {
-            tableStatus.innerText = 'ไม่สามารถโหลดประวัติได้ (ตรวจสอบ URL เว็บแอป)';
-        });
+        .catch(err => { tableStatus.innerText = 'ไม่สามารถโหลดประวัติได้ (ตรวจสอบ URL เว็บแอป)'; });
     }
 </script>
 
