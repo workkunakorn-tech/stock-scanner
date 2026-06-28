@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสแกนสต็อกสินค้า V16 (พร้อมปุ่มยกเลิก)</title>
+    <title>ระบบสแกนสต็อกสินค้า V17 (Fast & Accurate 13-Chars)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -45,7 +45,7 @@
             font-weight: 500;
             margin-bottom: 8px;
         }
-        /* ส่วนเลือกช่องทาง / Channel */
+        /* เลือกคลังสินค้า */
         .channel-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -88,7 +88,7 @@
             margin-bottom: 20px;
         }
         
-        /* พื้นที่กล้องสแกนและตัวช่วยเล็งโฟกัส */
+        /* พื้นที่กล้องสแกนและเลเซอร์ช่วยเล็ง */
         .scanner-wrapper {
             position: relative;
             width: 100%;
@@ -101,7 +101,7 @@
             width: 100%;
             border: none !important;
         }
-        /* เส้นเลเซอร์สีแดงช่วยโฟกัสตรงกลางกล่อง */
+        /* เส้นเลเซอร์สีแดงนำสายตา */
         .laser-line {
             display: none;
             position: absolute;
@@ -117,11 +117,11 @@
             animation: blinkLaser 1s infinite;
         }
         @keyframes blinkLaser {
-            0%, 100% { opacity: 0.4; }
+            0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
 
-        /* กล่องแจ้งเตือนสถานะ */
+        /* แจ้งเตือนสถานะ */
         .alert-box {
             display: none;
             background: #fef2f2;
@@ -172,7 +172,7 @@
             font-size: 13px;
         }
 
-        /* เอฟเฟกต์หน้าจอกะพริบเมื่อสแกนสำเร็จ */
+        /* เอฟเฟกต์หน้าจอกะพริบสีเขียว */
         #flashOverlay {
             position: fixed;
             top: 0;
@@ -263,7 +263,6 @@
             background: #f8fafc;
         }
         
-        /* ปุ่มบันทึกข้อมูล */
         .btn-submit {
             background: #22c55e;
             color: white;
@@ -278,7 +277,6 @@
             margin-bottom: 10px;
         }
         
-        /* ❌ ปุ่มยกเลิกที่เพิ่มเข้ามาใหม่ */
         .btn-cancel {
             background: #f1f5f9;
             color: #64748b;
@@ -303,8 +301,8 @@
 
 <div class="modal-overlay" id="qtyModal">
     <div class="modal-content">
-        <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 ตรวจสอบรหัสถูกต้อง!</div>
-        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า (ตรวจสอบ 3 ชั้นแล้ว):</div>
+        <div style="font-size: 18px; font-weight: 600; color: #1e293b;">🎯 สแกนสำเร็จและถูกต้อง!</div>
+        <div style="font-size: 13px; color: #64748b; margin-top: 4px;">รหัสบาร์โค้ดสินค้า (ตรวจสอบ 13 หลักตรงเป๊ะ):</div>
         <div class="modal-barcode" id="modalBarcodeTxt">---------</div>
         
         <div class="section-title">ระบุจำนวนสินค้า (พิมพ์เลขหรือกดปุ่มได้)</div>
@@ -360,7 +358,7 @@
     // ========================================================
     // ⚠️ สำคัญมาก: ลบข้อความข้างล่างนี้แล้ววาง URL Web App ของคุณแทนที่ ⚠️
     // ========================================================
-    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxxA5PTMRnfCczlWsvKqKRLGIpctv4BDW5syP9bhttX_h6MbkxSYJh0KprI_mO2b6fruA/exec"; 
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx4gPAmt_5cufm1icIera0rV6J8Cxol5k8HVGmM8e3vhYuuEVJZ1XpR5htRSLMG5wjw7w/exec"; 
 
     let currentChannel = 'FG';
     let html5QrcodeScanner = null;
@@ -369,7 +367,7 @@
     let lastScannedBarcode = ""; 
     let audioCtx = null; 
 
-    // ตัวแปรควบคุมระบบตรวจสอบความถูกต้อง 3 ชั้น
+    // ตัวแปรควบคุมระบบตรวจสอบความถูกต้องแบบรวดเร็ว
     let consecutiveCount = 0;
     let lastCheckedText = "";
 
@@ -448,6 +446,18 @@
         }
     }
 
+    // แก้ไขข้อความบั๊กกวนใจเพื่อให้สแกนไหลลื่น
+    function cleanHtml5QrcodeLabels() {
+        setTimeout(() => {
+            const scp = document.getElementById('html5-qrcode-select-camera');
+            if(scp) scp.style.display = 'none';
+            const stopBtn = document.getElementById('html5-qrcode-button-camera-stop');
+            if(stopBtn) stopBtn.style.display = 'none';
+            const startBtn = document.getElementById('html5-qrcode-button-camera-start');
+            if(startBtn) startBtn.style.display = 'none';
+        }, 150);
+    }
+
     function showAlert(msg, isError = true) {
         const box = document.getElementById('alertBox');
         if(msg) {
@@ -480,11 +490,12 @@
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
-                    fps: 8, 
+                    // ⚡ [เร่งสปีดกล้อง] ปรับเพิ่มเป็น 20 FPS เพื่อให้ตอบสนองฉับไวทันใจ
+                    fps: 20, 
                     qrbox: function(width, height) {
                         return { 
                             width: Math.floor(width * 0.95), 
-                            height: Math.floor(height * 0.35) 
+                            height: Math.floor(height * 0.40) 
                         }; 
                     },
                     formatsToSupport: [
@@ -499,6 +510,7 @@
                 onScanError
             ).then(() => {
                 isScanning = true;
+                cleanHtml5QrcodeLabels();
             }).catch(err => {
                 scanBtn.innerText = "📷 เปิดกล้องสแกนเนอร์";
                 scanBtn.style.background = "#2563eb";
@@ -525,21 +537,33 @@
         }
     }
 
+    // 🛡️ ด่านคัดกรองความเร็วสูง + ล็อกความแม่นยำ 13 ตัวอักษร
     function onScanSuccess(decodedText, decodedResult) {
         if (isModalOpen) return; 
 
-        if (decodedText === lastCheckedText) {
+        // ทำความสะอาดข้อมูลเบื้องต้น
+        let cleanedText = decodedText.trim();
+
+        // 🌟 [หัวใจหลัก] บังคับเลยว่าถ้าบาร์โค้ดอ่านออกมาแล้วยาวไม่ถึง 13 หลัก ให้ปัดทิ้งทันที! 
+        // ป้องกันอาการภาพเบลอแล้วกล้องแอบอ่านตัวอักษรขาดหาย
+        if (cleanedText.length !== 13) {
+            return; 
+        }
+
+        // ตรวจสอบความนิ่งซ้ำอีก 1 รอบ (รวมอ่านตรงกัน 2 ครั้งติดต่อกันที่ความเร็วสูง)
+        if (cleanedText === lastCheckedText) {
             consecutiveCount++;
         } else {
-            lastCheckedText = decodedText;
+            lastCheckedText = cleanedText;
             consecutiveCount = 1;
             return; 
         }
 
-        if (consecutiveCount < 3) {
+        if (consecutiveCount < 2) {
             return; 
         }
         
+        // เมื่อผ่านด่านล็อก 13 หลัก และนิ่งพอแล้ว -> แสดงผลทันที!
         isModalOpen = true; 
         consecutiveCount = 0;
         lastCheckedText = "";
@@ -547,8 +571,8 @@
         playBeepSound(); 
         triggerGreenFlash(); 
         
-        lastScannedBarcode = decodedText;
-        document.getElementById('modalBarcodeTxt').innerText = decodedText;
+        lastScannedBarcode = cleanedText;
+        document.getElementById('modalBarcodeTxt').innerText = cleanedText;
         resetModal(); 
 
         document.getElementById('qtyModal').style.display = 'flex';
@@ -557,20 +581,19 @@
             const qtyInput = document.getElementById('qtyInput');
             qtyInput.focus();
             qtyInput.select(); 
-        }, 100);
+        }, 80);
     }
 
     function onScanError(err) { }
 
-    // 🛑 ฟังก์ชันยกเลิกการบันทึกข้อมูล (เพิ่มเข้ามาใหม่)
     function cancelScan() {
-        document.getElementById('qtyModal').style.display = 'none'; // ปิดหน้าต่างป็อปอัป
-        isModalOpen = false; // ปลดล็อกสถานะเพื่อให้ระบบกล้องพร้อมรับการสแกนรอบใหม่ได้ทันที
-        consecutiveCount = 0; // ล้างค่าความถถี่ตัวสแกนเก่า
+        document.getElementById('qtyModal').style.display = 'none'; 
+        isModalOpen = false; 
+        consecutiveCount = 0; 
         lastCheckedText = "";
         
         showAlert("❌ ยกเลิกการบันทึกรายการแล้ว", true);
-        setTimeout(() => { showAlert(null); }, 1000); // แสดงข้อความแจ้งเตือนแป๊บนึงแล้วซ่อนซะ
+        setTimeout(() => { showAlert(null); }, 1000); 
     }
 
     function submitData() {
